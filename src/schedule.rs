@@ -87,7 +87,6 @@ impl Schedule {
 
                             for second in self.fields.seconds.ordinals().range(second_range).cloned() {
                                 let timezone = after.timezone();
-                                println!("{year} {month} {day_of_month} {hour} {minute} {second}");
                                 let candidate = if let Some(candidate) =
                                     NaiveDate::from_ymd_opt(year as i32, month, day_of_month)
                                         .unwrap()
