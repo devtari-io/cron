@@ -435,6 +435,10 @@ where
 pub struct OwnedScheduleIterator<Z> where Z: TimeZone {
     schedule: Schedule,
     previous_datetime: Option<DateTime<Z>>,
+    // In the case of the Daylight Savings Time transition where an hour is
+    // gained, store the time that occurs twice.  Depending on which direction
+    // the iteration goes, this needs to be stored separately to keep the
+    // direction of time (becoming earlier or later) consistent.
     later_datetime: Option<DateTime<Z>>,
     earlier_datetime: Option<DateTime<Z>>,
 }
@@ -465,6 +469,10 @@ impl<Z> Iterator for OwnedScheduleIterator<Z> where Z: TimeZone {
                     self.previous_datetime = Some(next.clone());
                     Some(next)
                 }
+                // Handle an "Ambiguous" time, such as during the end of
+                // Daylight Savings Time, transitioning from BST to GMT, where
+                // for example, in London, 2AM occurs twice when the hour is
+                // moved back during the fall.
                 LocalResult::Ambiguous(earlier, later) => {
                     self.previous_datetime = Some(earlier.clone());
                     self.later_datetime = Some(later);
@@ -489,6 +497,10 @@ impl<Z: TimeZone> DoubleEndedIterator for OwnedScheduleIterator<Z> {
                     self.previous_datetime = Some(prev.clone());
                     Some(prev)
                 }
+                // Handle an "Ambiguous" time, such as during the end of
+                // Daylight Savings Time, transitioning from BST to GMT, where
+                // for example, in London, 2AM occurs twice when the hour is
+                // moved back during the fall.
                 LocalResult::Ambiguous(earlier, later) => {
                     self.previous_datetime = Some(later.clone());
                     self.earlier_datetime = Some(earlier);
