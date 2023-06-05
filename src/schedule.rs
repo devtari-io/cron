@@ -1,5 +1,5 @@
 use chrono::offset::TimeZone;
-use chrono::{DateTime, Datelike, Timelike, Utc};
+use chrono::{DateTime, Datelike, LocalResult, Timelike, Utc};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::ops::Bound::{Included, Unbounded};
 
@@ -92,10 +92,15 @@ impl Schedule {
                                 self.fields.seconds.ordinals().range(second_range).cloned()
                             {
                                 let timezone = after.timezone();
-                                let candidate = if let Some(candidate) = timezone
-                                    .ymd(year as i32, month, day_of_month)
-                                    .and_hms_opt(hour, minute, second)
-                                {
+                                let candidate = if let LocalResult::Single(candidate) = timezone
+                                    .with_ymd_and_hms(
+                                        year as i32,
+                                        month,
+                                        day_of_month,
+                                        hour,
+                                        minute,
+                                        second,
+                                    ) {
                                     candidate
                                 } else {
                                     continue;
@@ -222,10 +227,15 @@ impl Schedule {
                                 .cloned()
                             {
                                 let timezone = before.timezone();
-                                let candidate = if let Some(candidate) = timezone
-                                    .ymd(year as i32, month, day_of_month)
-                                    .and_hms_opt(hour, minute, second)
-                                {
+                                let candidate = if let LocalResult::Single(candidate) = timezone
+                                    .with_ymd_and_hms(
+                                        year as i32,
+                                        month,
+                                        day_of_month,
+                                        hour,
+                                        minute,
+                                        second,
+                                    ) {
                                     candidate
                                 } else {
                                     continue;
@@ -684,8 +694,8 @@ mod test {
 
         let schedule_tz: Tz = "Europe/London".parse().unwrap();
         let dt = schedule_tz
-            .ymd(2019, 10, 27)
-            .and_hms(0, 3, 29)
+            .with_ymd_and_hms(2019, 10, 27, 0, 3, 29)
+            .unwrap()
             .checked_add_signed(chrono::Duration::hours(1)) // puts it in the middle of the DST transition
             .unwrap();
         let schedule = Schedule::from_str("* * * * * Sat,Sun *").unwrap();
@@ -700,8 +710,8 @@ mod test {
 
         let schedule_tz: Tz = "Europe/London".parse().unwrap();
         let dt = schedule_tz
-            .ymd(2019, 10, 27)
-            .and_hms(0, 3, 29)
+            .with_ymd_and_hms(2019, 10, 27, 0, 3, 29)
+            .unwrap()
             .checked_add_signed(chrono::Duration::hours(1)) // puts it in the middle of the DST transition
             .unwrap();
         let schedule = Schedule::from_str("* * * * * Sat,Sun *").unwrap();
