@@ -760,8 +760,8 @@ mod test {
 
         let schedule_tz: Tz = "Europe/London".parse().unwrap();
         let dt = schedule_tz
-            .ymd(2019, 10, 27)
-            .and_hms(0, 3, 29)
+            .with_ymd_and_hms(2019, 10, 27, 0, 3, 29)
+            .unwrap()
             .checked_add_signed(chrono::Duration::hours(1)) // puts it in the middle of the DST transition
             .unwrap();
         let schedule = Schedule::from_str("* * * * * Sat,Sun *").unwrap();
@@ -776,8 +776,8 @@ mod test {
 
         let schedule_tz: Tz = "Europe/London".parse().unwrap();
         let dt = schedule_tz
-            .ymd(2019, 10, 27)
-            .and_hms(0, 3, 29)
+            .with_ymd_and_hms(2019, 10, 27, 0, 3, 29)
+            .unwrap()
             .checked_add_signed(chrono::Duration::hours(1)) // puts it in the middle of the DST transition
             .unwrap();
         let schedule = Schedule::from_str("* * * * * Sat,Sun *").unwrap();
@@ -821,7 +821,6 @@ mod test {
 
     #[test]
     fn test_dst_ambiguous_time_before() {
-        use chrono::NaiveDateTime;
         use chrono_tz::Tz;
 
         let schedule_tz: Tz = "America/Chicago".parse().unwrap();
