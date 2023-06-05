@@ -1,12 +1,11 @@
-
-use chrono::offset::{TimeZone, LocalResult};
+use chrono::offset::{LocalResult, TimeZone};
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc};
-use std::ops::Bound::{Included, Unbounded};
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::ops::Bound::{Included, Unbounded};
 
-use crate::time_unit::*;
 use crate::ordinal::*;
 use crate::queries::*;
+use crate::time_unit::*;
 
 impl From<Schedule> for String {
     fn from(schedule: Schedule) -> String {
@@ -21,14 +20,8 @@ pub struct Schedule {
 }
 
 impl Schedule {
-    pub(crate) fn new(
-        source: String,
-        fields: ScheduleFields,
-    ) -> Schedule {
-        Schedule {
-            source,
-            fields,
-        }
+    pub(crate) fn new(source: String, fields: ScheduleFields) -> Schedule {
+        Schedule { source, fields }
     }
 
     fn next_after<Z>(&self, after: &DateTime<Z>) -> LocalResult<DateTime<Z>>
@@ -55,7 +48,12 @@ impl Schedule {
             let month_range = (Included(month_start), Included(Months::inclusive_max()));
             for month in self.fields.months.ordinals().range(month_range).cloned() {
                 let day_of_month_start = query.day_of_month_lower_bound();
-                if !self.fields.days_of_month.ordinals().contains(&day_of_month_start) {
+                if !self
+                    .fields
+                    .days_of_month
+                    .ordinals()
+                    .contains(&day_of_month_start)
+                {
                     query.reset_day_of_month();
                 }
                 let day_of_month_end = days_in_month(month, year);
@@ -90,7 +88,9 @@ impl Schedule {
                             let second_range =
                                 (Included(second_start), Included(Seconds::inclusive_max()));
 
-                            for second in self.fields.seconds.ordinals().range(second_range).cloned() {
+                            for second in
+                                self.fields.seconds.ordinals().range(second_range).cloned()
+                            {
                                 let timezone = after.timezone();
                                 let candidate = if let Some(candidate) =
                                     NaiveDate::from_ymd_opt(year as i32, month, day_of_month)
@@ -104,12 +104,14 @@ impl Schedule {
                                 } else {
                                     continue;
                                 };
-                                if !self
-                                    .fields
-                                    .days_of_week
-                                    .ordinals()
-                                    .contains(&candidate.clone().latest().unwrap().weekday().number_from_sunday())
-                                {
+                                if !self.fields.days_of_week.ordinals().contains(
+                                    &candidate
+                                        .clone()
+                                        .latest()
+                                        .unwrap()
+                                        .weekday()
+                                        .number_from_sunday(),
+                                ) {
                                     continue 'day_loop;
                                 }
                                 return candidate;
@@ -148,9 +150,21 @@ impl Schedule {
             }
             let month_range = (Included(Months::inclusive_min()), Included(month_start));
 
-            for month in self.fields.months.ordinals().range(month_range).rev().cloned() {
+            for month in self
+                .fields
+                .months
+                .ordinals()
+                .range(month_range)
+                .rev()
+                .cloned()
+            {
                 let day_of_month_end = query.day_of_month_upper_bound();
-                if !self.fields.days_of_month.ordinals().contains(&day_of_month_end) {
+                if !self
+                    .fields
+                    .days_of_month
+                    .ordinals()
+                    .contains(&day_of_month_end)
+                {
                     query.reset_day_of_month();
                 }
 
@@ -175,7 +189,14 @@ impl Schedule {
                     }
                     let hour_range = (Included(Hours::inclusive_min()), Included(hour_start));
 
-                    for hour in self.fields.hours.ordinals().range(hour_range).rev().cloned() {
+                    for hour in self
+                        .fields
+                        .hours
+                        .ordinals()
+                        .range(hour_range)
+                        .rev()
+                        .cloned()
+                    {
                         let minute_start = query.minute_upper_bound();
                         if !self.fields.minutes.ordinals().contains(&minute_start) {
                             query.reset_minute();
@@ -183,7 +204,14 @@ impl Schedule {
                         let minute_range =
                             (Included(Minutes::inclusive_min()), Included(minute_start));
 
-                        for minute in self.fields.minutes.ordinals().range(minute_range).rev().cloned() {
+                        for minute in self
+                            .fields
+                            .minutes
+                            .ordinals()
+                            .range(minute_range)
+                            .rev()
+                            .cloned()
+                        {
                             let second_start = query.second_upper_bound();
                             if !self.fields.seconds.ordinals().contains(&second_start) {
                                 query.reset_second();
@@ -191,7 +219,13 @@ impl Schedule {
                             let second_range =
                                 (Included(Seconds::inclusive_min()), Included(second_start));
 
-                            for second in self.fields.seconds.ordinals().range(second_range).rev().cloned()
+                            for second in self
+                                .fields
+                                .seconds
+                                .ordinals()
+                                .range(second_range)
+                                .rev()
+                                .cloned()
                             {
                                 let timezone = before.timezone();
                                 let candidate = if let Some(candidate) =
@@ -206,12 +240,14 @@ impl Schedule {
                                 } else {
                                     continue;
                                 };
-                                if !self
-                                    .fields
-                                    .days_of_week
-                                    .ordinals()
-                                    .contains(&candidate.clone().latest().unwrap().weekday().number_from_sunday())
-                                {
+                                if !self.fields.days_of_week.ordinals().contains(
+                                    &candidate
+                                        .clone()
+                                        .latest()
+                                        .unwrap()
+                                        .weekday()
+                                        .number_from_sunday(),
+                                ) {
                                     continue 'day_loop;
                                 }
                                 return candidate;
@@ -261,13 +297,19 @@ impl Schedule {
     where
         Z: TimeZone,
     {
-        self.fields.years.includes(date_time.year() as Ordinal)  &&
-        self.fields.months.includes(date_time.month() as Ordinal) &&
-        self.fields.days_of_week.includes(date_time.weekday().number_from_sunday()) &&
-        self.fields.days_of_month.includes(date_time.day() as Ordinal) &&
-        self.fields.hours.includes(date_time.hour() as Ordinal) &&
-        self.fields.minutes.includes(date_time.minute() as Ordinal) &&
-        self.fields.seconds.includes(date_time.second() as Ordinal)
+        self.fields.years.includes(date_time.year() as Ordinal)
+            && self.fields.months.includes(date_time.month() as Ordinal)
+            && self
+                .fields
+                .days_of_week
+                .includes(date_time.weekday().number_from_sunday())
+            && self
+                .fields
+                .days_of_month
+                .includes(date_time.day() as Ordinal)
+            && self.fields.hours.includes(date_time.hour() as Ordinal)
+            && self.fields.minutes.includes(date_time.minute() as Ordinal)
+            && self.fields.seconds.includes(date_time.second() as Ordinal)
     }
 
     /// Returns a [TimeUnitSpec] describing the years included in this [Schedule].
@@ -437,7 +479,10 @@ where
 }
 
 /// A `ScheduleIterator` with a static lifetime.
-pub struct OwnedScheduleIterator<Z> where Z: TimeZone {
+pub struct OwnedScheduleIterator<Z>
+where
+    Z: TimeZone,
+{
     schedule: Schedule,
     previous_datetime: Option<DateTime<Z>>,
     // In the case of the Daylight Savings Time transition where an hour is
@@ -448,7 +493,10 @@ pub struct OwnedScheduleIterator<Z> where Z: TimeZone {
     earlier_datetime: Option<DateTime<Z>>,
 }
 
-impl<Z> OwnedScheduleIterator<Z> where Z: TimeZone {
+impl<Z> OwnedScheduleIterator<Z>
+where
+    Z: TimeZone,
+{
     pub fn new(schedule: Schedule, starting_datetime: DateTime<Z>) -> Self {
         Self {
             schedule,
@@ -459,7 +507,10 @@ impl<Z> OwnedScheduleIterator<Z> where Z: TimeZone {
     }
 }
 
-impl<Z> Iterator for OwnedScheduleIterator<Z> where Z: TimeZone {
+impl<Z> Iterator for OwnedScheduleIterator<Z>
+where
+    Z: TimeZone,
+{
     type Item = DateTime<Z>;
 
     fn next(&mut self) -> Option<DateTime<Z>> {
@@ -537,7 +588,7 @@ fn days_in_month(month: Ordinal, year: Ordinal) -> u32 {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::str::{FromStr};
+    use std::str::FromStr;
 
     #[test]
     fn test_next_and_prev_from() {
@@ -561,11 +612,16 @@ mod test {
     #[test]
     fn test_next_after_past_date_next_year() {
         let past = Utc::now() - chrono::Duration::weeks(3);
-        let expression = format!("0 5 17 {} {} ? {}", past.day(), past.month(), past.year() + 1);
+        let expression = format!(
+            "0 5 17 {} {} ? {}",
+            past.day(),
+            past.month(),
+            past.year() + 1
+        );
         let schedule = Schedule::from_str(&expression).unwrap();
         let next = schedule.next_after(&Utc::now());
         println!("NEXT AFTER for {} {:?}", expression, next);
-        assert!(next.is_some());
+        assert!(next.single().is_some());
     }
 
     #[test]
@@ -745,12 +801,13 @@ mod test {
         use chrono_tz::Tz;
 
         let schedule_tz: Tz = "America/Chicago".parse().unwrap();
-        let dt = schedule_tz
-            .ymd(2022, 11, 5)
-            .and_hms_opt(23, 30, 0)
-            .unwrap();
+        let dt = schedule_tz.ymd(2022, 11, 5).and_hms_opt(23, 30, 0).unwrap();
         let schedule = Schedule::from_str("0 0 * * * * *").unwrap();
-        let times = schedule.after(&dt).map(|x| x.to_string()).take(5).collect::<Vec<_>>();
+        let times = schedule
+            .after(&dt)
+            .map(|x| x.to_string())
+            .take(5)
+            .collect::<Vec<_>>();
         let expected_times = [
             "2022-11-06 00:00:00 CDT".to_string(),
             "2022-11-06 01:00:00 CDT".to_string(),
@@ -768,12 +825,14 @@ mod test {
         use chrono_tz::Tz;
 
         let schedule_tz: Tz = "America/Chicago".parse().unwrap();
-        let dt = schedule_tz
-            .ymd(2022, 11, 6)
-            .and_hms_opt(3, 30, 0)
-            .unwrap();
+        let dt = schedule_tz.ymd(2022, 11, 6).and_hms_opt(3, 30, 0).unwrap();
         let schedule = Schedule::from_str("0 0 * * * * *").unwrap();
-        let times = schedule.after(&dt).map(|x| x.to_string()).rev().take(5).collect::<Vec<_>>();
+        let times = schedule
+            .after(&dt)
+            .map(|x| x.to_string())
+            .rev()
+            .take(5)
+            .collect::<Vec<_>>();
         let expected_times = [
             "2022-11-06 03:00:00 CST".to_string(),
             "2022-11-06 02:00:00 CST".to_string(),
