@@ -801,7 +801,9 @@ mod test {
         use chrono_tz::Tz;
 
         let schedule_tz: Tz = "America/Chicago".parse().unwrap();
-        let dt = schedule_tz.ymd(2022, 11, 5).and_hms_opt(23, 30, 0).unwrap();
+        let dt = schedule_tz
+            .with_ymd_and_hms(2022, 11, 5, 23, 30, 0)
+            .unwrap();
         let schedule = Schedule::from_str("0 0 * * * * *").unwrap();
         let times = schedule
             .after(&dt)
@@ -824,7 +826,7 @@ mod test {
         use chrono_tz::Tz;
 
         let schedule_tz: Tz = "America/Chicago".parse().unwrap();
-        let dt = schedule_tz.ymd(2022, 11, 6).and_hms_opt(3, 30, 0).unwrap();
+        let dt = schedule_tz.with_ymd_and_hms(2022, 11, 6, 3, 30, 0).unwrap();
         let schedule = Schedule::from_str("0 0 * * * * *").unwrap();
         let times = schedule
             .after(&dt)
